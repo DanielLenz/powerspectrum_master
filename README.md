@@ -10,6 +10,11 @@ This package allows to extract angular power spectra for cosmological background
 image. It makes use of the MASTER algorithm
 ([Hivon et al. 2002](http://adsabs.harvard.edu/abs/2002ApJ...567....2H)).
 
+## Installation ##
+
+Currently, `powerspectrum_master` has no `setup` feature, so you need to clone
+the repository and add it to your `PYTHONPATH`. We will change this shortly.
+
 ## Dependencies ##
 
 We kept the dependencies as minimal as possible. The following packages are
@@ -23,7 +28,7 @@ If you want to run the notebooks yourself, you will also need the Jupyter server
 
 ### Examples ###
 
-Check out the [`ipython notebooks`](http://nbviewer.jupyter.org/github/dlenz/powerspectrum_master/blob/master/notebooks/index.ipynb) in the repository for some examples of how to work with `powerspectrum_master`. Note that you only view them on the nbviewer service, and will have to clone the repository to run them on your machine.
+Check out the [`ipython notebooks`](http://nbviewer.jupyter.org/github/dlenz/powerspectrum_master/blob/master/index.ipynb) in the repository for some examples of how to work with `powerspectrum_master`. Note that you only view them on the nbviewer service, and will have to clone the repository to run them on your machine.
 
 ### Who do I talk to? ###
 
