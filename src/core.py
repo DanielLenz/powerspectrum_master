@@ -67,7 +67,7 @@ def make_M_l1l2(ls, W):
     return M_l1l2
 
 
-def make_P_bl(ls, cl, nbins):
+def make_P_bl(ls, nbins):
     P_bl = np.zeros((nbins, ls.shape[0]))
     l_lows = np.linspace(ls[0], ls[-1], nbins+1, dtype=np.int)
     bin_centres = np.diff(l_lows)/2 + l_lows[:-1]
@@ -78,15 +78,17 @@ def make_P_bl(ls, cl, nbins):
     return P_bl, bin_centres
 
 
-def make_Q_lb(ls, cl, nbins):
-    Q_lb = np.zeros((nbins, ls.shape[0]))
+def make_Q_lb(ls, nbins):
+    Q_lb = np.zeros((ls.shape[0], nbins))
     l_lows = np.linspace(ls[0], ls[-1], nbins+1, dtype=np.int)
     bin_centres = np.diff(l_lows)/2 + l_lows[:-1]
 
-    for b, l in it.product(np.arange(nbins), ls):
+    for b, l in it.product(np.arange(nbins), ls-ls[0]):
         if (2 <= l_lows[b]) & (l_lows[b] <= l) & (l < l_lows[b+1]):
-            Q_lb[b, l] += 2.*np.pi / l / (l+1.)
+            Q_lb[l, b] += 2.*np.pi / l / (l+1.)
+
     return Q_lb, bin_centres
+
 
 
 
