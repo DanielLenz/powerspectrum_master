@@ -5,6 +5,7 @@ import numpy as np
 from numba import njit
 from sympy.physics import wigner
 import itertools as it
+from scipy import linalg
 
 
 def wignersq_exact(l1, l2, l3):
@@ -90,10 +91,22 @@ def make_Q_lb(ls, nbins):
     return Q_lb, bin_centres
 
 
+def make_K_b1b2(ls, nbins, W, B):
+    M_l1l2 = make_M_l1l2(ls, W=W)
+    P_bl, bin_centres = make_P_bl(ls, nbins)
+    Q_lb, _ = make_Q_lb(ls, nbins)
+    K_b1b2 = np.dot(P_bl, np.dot(M_l1l2, ((B**2)[:, None] * Q_lb)))
+
+    return K_b1b2, bin_centres
 
 
+def get_C_b(ls, cl_conv, nbins, W, B):
+    K_b1b2, bincentres = make_K_b1b2(ls, nbins, W, B)
+    K_inv = linalg.inv(K_b1b2[1:, 1:])
+    P_bl, _ = make_P_bl(ls, nbins)
+    C_b = np.dot(np.dot(K_inv, P_bl[1:, 1:]), cl_conv[1:])
 
-
+    return C_b, bincentres
 
 
 
