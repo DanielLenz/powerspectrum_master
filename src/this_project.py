@@ -6,3 +6,5 @@ CMAP_GREY.set_under("grey")
 
 CMAP = cm.viridis
 CMAP.set_under("grey")
+
+BASEPATH = '/users/dlenz/projects/'
