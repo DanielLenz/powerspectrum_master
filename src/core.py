@@ -29,7 +29,7 @@ def wignersq_simple(l1, l2, l3):
     b3 = np.math.factorial(L/2-l2)
     b4 = np.math.factorial(L/2-l3)
 
-    term2 = (b1 // b2 // b3 // b4)
+    term2 = (b1 / b2 / b3 / b4)
 
     out = (-1)**(L/2) * term1 * term2
     return out*out
@@ -53,25 +53,16 @@ def wignersq_approx(l1, l2, l3):
 
 def make_M_l1l2(ls, W):
     M_l1l2 = np.zeros((ls.size, ls.size), dtype=np.float32)
-    for l1, l2, l3 in it.product(ls, repeat=3):
-        L = l1 + l2 + l3
-        if L % 2:
-            continue
-        if (np.abs(l1-l2) > l3) or (l3 > (l1 + l2)):
-            continue
-        factor = (2. * l2 + 1.) / 4. / np.pi
-        if (l1 > 50) & (l2 > 50) & (l3 > 50):
-            wigner_term = (
-                (2. * l3 + 1.) * W[l3-ls[0]] *
-                wignersq_approx(l1, l2, l3)
-                )
-        else:
-            wigner_term = (
-                (2. * l3 + 1.) * W[l3-ls[0]] *
-                wignersq_simple(l1, l2, l3))
 
-        if np.isfinite(wigner_term):
-            M_l1l2[l1-ls[0], l2-ls[0]] += factor * wigner_term
+    wigner_3j = np.load('resources/raw.npy', mmap_mode='r')
+    for l1, l2, l3 in it.product(ls, repeat=3):
+        factor = (2. * l2 + 1.) / 4. / np.pi
+        wigner_term = (
+            (2. * l3 + 1.) * W[l3-ls[0]] *
+            wigner_3j[l1, l2, l3]
+            )
+
+        M_l1l2[l1-ls[0], l2-ls[0]] += factor * wigner_term
     return M_l1l2
 
 
