@@ -6,7 +6,6 @@ from numba import njit
 from sympy.physics import wigner
 import itertools as it
 from scipy import linalg
-# from scipy import misc
 
 
 def wignersq_exact(l1, l2, l3):
@@ -31,7 +30,7 @@ def wignersq_simple(l1, l2, l3):
 
     term2 = (b1 / b2 / b3 / b4)
 
-    out = (-1)**(L/2) * term1 * term2
+    out = term1 * term2
     return out*out
 
 
@@ -71,9 +70,10 @@ def make_P_bl(ls, nbins):
     l_lows = np.linspace(ls[0], ls[-1], nbins+1, dtype=np.int)
     bin_centres = np.diff(l_lows)/2 + l_lows[:-1]
 
-    for b, l in it.product(np.arange(nbins), ls-ls[0]):
+    for b, l in it.product(np.arange(nbins), ls):
         if (2 <= l_lows[b]) & (l_lows[b] <= l) & (l < l_lows[b+1]):
-            P_bl[b, l] += 1./2./np.pi * l * (l+1.) / (l_lows[b+1] - l_lows[b])
+            P_bl[b, l-ls[0]] += 1./2./np.pi * l * (l+1.) / (
+                l_lows[b+1] - l_lows[b])
     return P_bl, bin_centres
 
 
@@ -82,9 +82,9 @@ def make_Q_lb(ls, nbins):
     l_lows = np.linspace(ls[0], ls[-1], nbins+1, dtype=np.int)
     bin_centres = np.diff(l_lows)/2 + l_lows[:-1]
 
-    for b, l in it.product(np.arange(nbins), ls-ls[0]):
+    for b, l in it.product(np.arange(nbins), ls):
         if (2 <= l_lows[b]) & (l_lows[b] <= l) & (l < l_lows[b+1]):
-            Q_lb[l, b] += 2.*np.pi / l / (l+1.)
+            Q_lb[l-ls[0], b] += 2.*np.pi / l / (l+1.)
 
     return Q_lb, bin_centres
 
