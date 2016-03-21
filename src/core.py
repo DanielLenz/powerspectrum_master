@@ -53,7 +53,7 @@ def wignersq_approx(l1, l2, l3):
 def make_M_l1l2(ls, W):
     M_l1l2 = np.zeros((ls.size, ls.size), dtype=np.float32)
 
-    wigner_3j = np.load('resources/raw.npy', mmap_mode='r')
+    wigner_3j = np.load('resources/wigner_3j.npy', mmap_mode='r')
     for l1, l2, l3 in it.product(ls, repeat=3):
         factor = (2. * l2 + 1.) / 4. / np.pi
         wigner_term = (
