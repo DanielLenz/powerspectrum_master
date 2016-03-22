@@ -2,52 +2,8 @@
 
 from __future__ import division
 import numpy as np
-from numba import njit
-from sympy.physics import wigner
 import itertools as it
 from scipy import linalg
-
-
-def wignersq_exact(l1, l2, l3):
-    result = wigner.wigner_3j(l1, l2, l3, 0, 0, 0)
-    return result**2
-
-
-def wignersq_simple(l1, l2, l3):
-    L = l1 + l2 + l3
-
-    a1 = np.long(np.math.factorial(L-2*l1))
-    a2 = np.long(np.math.factorial(L-2*l2))
-    a3 = np.long(np.math.factorial(L-2*l3))
-    a4 = np.long(np.math.factorial(L+1))
-
-    term1 = np.sqrt(a1 * a2 * a3 / a4)
-
-    b1 = np.math.factorial(L/2)
-    b2 = np.math.factorial(L/2-l1)
-    b3 = np.math.factorial(L/2-l2)
-    b4 = np.math.factorial(L/2-l3)
-
-    term2 = (b1 / b2 / b3 / b4)
-
-    out = term1 * term2
-    return out*out
-
-
-@njit
-def wignersq_approx(l1, l2, l3):
-
-    a1 = 2*np.power(l1*l2, 2)
-    a2 = 2*np.power(l1*l3, 2)
-    a3 = 2*np.power(l2*l3, 2)
-    b1 = np.power(l1, 4)
-    b2 = np.power(l2, 4)
-    b3 = np.power(l3, 4)
-
-    term1 = a1 + a2 + a3 - b1 - b2 - b3
-    if term1 <= 0.:
-        return 0.
-    return 2./np.pi/np.sqrt(term1)
 
 
 def make_M_l1l2(ls, W):
