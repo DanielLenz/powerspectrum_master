@@ -5,68 +5,14 @@ import numpy as np
 import itertools as it
 import healpy as hp
 from scipy import linalg
+from joblib import Memory
 
 from .utilities import wigner_3j_sq
 
-
-def make_M_l1l2(ls, W):
-    M_l1l2 = np.zeros((ls.size, ls.size), dtype=np.float32)
-
-    wigner_3j = np.load('resources/wigner_3j.npy', mmap_mode='r')
-    for l1, l2, l3 in it.product(ls, repeat=3):
-        factor = (2. * l2 + 1.) / 4. / np.pi
-        wigner_term = (
-            (2. * l3 + 1.) * W[l3-ls[0]] *
-            wigner_3j[l1, l2, l3]
-            )
-
-        M_l1l2[l1-ls[0], l2-ls[0]] += factor * wigner_term
-    return M_l1l2
+memory = Memory(cachedir='.tmp/', verbose=False)
 
 
-def make_P_bl(ls, nbins):
-    P_bl = np.zeros((nbins, ls.shape[0]))
-    l_lows = np.linspace(ls[0], ls[-1], nbins+1, dtype=np.int)
-    bin_centres = np.diff(l_lows)/2 + l_lows[:-1]
-
-    for b, l in it.product(np.arange(nbins), ls):
-        if (2 <= l_lows[b]) & (l_lows[b] <= l) & (l < l_lows[b+1]):
-            P_bl[b, l-ls[0]] += 1./2./np.pi * l * (l+1.) / (
-                l_lows[b+1] - l_lows[b])
-    return P_bl, bin_centres
-
-
-def make_Q_lb(ls, nbins):
-    Q_lb = np.zeros((ls.shape[0], nbins))
-    l_lows = np.linspace(ls[0], ls[-1], nbins+1, dtype=np.int)
-    bin_centres = np.diff(l_lows)/2 + l_lows[:-1]
-
-    for b, l in it.product(np.arange(nbins), ls):
-        if (2 <= l_lows[b]) & (l_lows[b] <= l) & (l < l_lows[b+1]):
-            Q_lb[l-ls[0], b] += 2.*np.pi / l / (l+1.)
-
-    return Q_lb, bin_centres
-
-
-def make_K_b1b2(ls, nbins, W, B):
-    M_l1l2 = make_M_l1l2(ls, W=W)
-    P_bl, bin_centres = make_P_bl(ls, nbins)
-    Q_lb, _ = make_Q_lb(ls, nbins)
-    K_b1b2 = np.dot(P_bl, np.dot(M_l1l2, ((B**2)[:, None] * Q_lb)))
-
-    return K_b1b2, bin_centres
-
-
-def get_C_b(ls, cl_conv, nbins, W, B):
-    K_b1b2, bincentres = make_K_b1b2(ls, nbins, W, B)
-    K_inv = linalg.inv(K_b1b2[1:, 1:])
-    P_bl, _ = make_P_bl(ls, nbins)
-    C_b = np.dot(np.dot(K_inv, P_bl[1:, 1:]), cl_conv[1:])
-
-    return C_b, bincentres
-
-
-class PowSpec(object):
+class PowSpecEstimator(object):
     """docstring for PowSpec"""
 
     _cl_conv = None
@@ -107,6 +53,10 @@ class PowSpec(object):
 
         self.beam = beam
 
+        self.determine_M_l1l2 = memory.cache(self.determine_M_l1l2)
+
+    # Properties
+    ##########################################
     @property
     def nside(self):
         self._nside = hp.get_nside(self.map1)
@@ -116,6 +66,11 @@ class PowSpec(object):
     def ls(self):
         self._ls = np.arange(self.lmax)
         return self._ls
+
+    @property
+    def norm(self):
+        self._norm = self.ls * (self.ls + 1) / 2. / np.pi
+        return self._norm
 
     @property
     def map1(self):
@@ -132,13 +87,14 @@ class PowSpec(object):
     @property
     def cl_conv(self):
         if self._cl_conv is None:
-            self._cl_conv = hp.anafast(self.map1 * self.mask, lmax=self.lmax-1)
+            self._cl_conv = self.get_cl_conv(
+                self.map1*self.mask, lmax=self.lmax-1)
         return self._cl_conv
 
     @property
     def cl_mask(self):
         if self._cl_mask is None:
-            self._cl_mask = hp.anafast(self.mask, lmax=self.lmax-1)
+            self._cl_mask = self.get_cl_conv(self.mask, lmax=self.lmax-1)
         return self._cl_mask
 
     @property
@@ -158,11 +114,6 @@ class PowSpec(object):
     def windowfunc(self):
         self._windowfunc = self.beamfunc * self.pixfunc
         return self._windowfunc
-
-    def set_bins(self, nbins):
-        self.nbins = nbins
-        self.l_lows = np.linspace(0, self.lmax-1, nbins+1, dtype=np.int)
-        self.bin_centres = np.diff(self.l_lows)/2 + self.l_lows[:-1]
 
     @property
     def cl_binned(self):
@@ -203,15 +154,8 @@ class PowSpec(object):
 
     @property
     def M_l1l2(self):
-
-        self._M_l1l2 = np.zeros((self.lmax, self.lmax), dtype=np.float32)
-        wigner_3j = np.load('resources/wigner_3j.npy', mmap_mode='r')
-        for l1, l2, l3 in it.product(self.ls, repeat=3):
-            factor = (2. * l2 + 1.) / 4. / np.pi
-            wigner_term = (
-                (2. * l3 + 1.) * self.cl_mask[l3] * wigner_3j[l1, l2, l3])
-
-            self._M_l1l2[l1, l2] += factor * wigner_term
+        if self._M_l1l2 is None:
+            self._M_l1l2 = self.determine_M_l1l2(self.lmax, self.cl_mask)
 
         return self._M_l1l2
 
@@ -222,30 +166,27 @@ class PowSpec(object):
                 self.M_l1l2, ((self.windowfunc**2)[:, None] * self.Q_lb)))
         return self._K_b1b2
 
+    # Functions
+    ##########################################
+    def determine_M_l1l2(self, lmax, cl_mask):
+        M_l1l2 = np.zeros((lmax, lmax), dtype=np.float32)
+        for l1, l2, l3 in it.product(np.arange(lmax), repeat=3):
+            factor = (2. * l2 + 1.) / 4. / np.pi
+            wigner_term = (
+                (2. * l3 + 1.) * cl_mask[l3] * wigner_3j_sq(l1, l2, l3))
 
+            M_l1l2[l1, l2] += factor * wigner_term
 
+        return M_l1l2
 
+    def get_cl_conv(self, map1, lmax):
+        cl_conv = hp.anafast(map1, lmax=lmax)
+        return cl_conv
 
-# lasse
-# tobi
-# svente
-# sven
-# nico
-# nils
-# janP
-# daniel
-
-
-
-
-
-
-
-
-
-
-
-
+    def set_bins(self, nbins):
+        self.nbins = nbins
+        self.l_lows = np.linspace(0, self.lmax-1, nbins+1, dtype=np.int)
+        self.bin_centres = np.diff(self.l_lows)/2 + self.l_lows[:-1]
 
 
 
