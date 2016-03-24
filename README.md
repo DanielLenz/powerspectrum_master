@@ -3,7 +3,7 @@ Deconvolution, binning, and estimation of uncertainties for angular power spectr
 
 ## Introduction
 
-- *Version*: 0.1
+- *Version*: 0.2
 - *Authors*: Daniel Lenz
 
 This package allows to extract angular power spectra for cosmological background
