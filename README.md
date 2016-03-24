@@ -15,6 +15,12 @@ image. It makes use of the MASTER algorithm
 Currently, `powerspectrum_master` has no `setup` feature, so you need to clone
 the repository and add it to your `PYTHONPATH`. We will change this shortly.
 
+## Features ##
+
+- Binning
+- Deconvolving
+<!-- - Caching of $M_{l_1l_2}$ matrices -->
+
 ## Dependencies ##
 
 We kept the dependencies as minimal as possible. The following packages are
