@@ -4,7 +4,8 @@ from matplotlib import cm
 CMAP_GREY = cm.binary
 CMAP_GREY.set_under("grey")
 
-CMAP = cm.viridis
+try:
+    CMAP = cm.viridis
+except AttributeError:
+    CMAP = cm.YlGnBu
 CMAP.set_under("grey")
-
-BASEPATH = '/users/dlenz/projects/'
