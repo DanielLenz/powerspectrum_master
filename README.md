@@ -1,4 +1,4 @@
-# Powerspectrum Master
+# PowSpecPy
 Deconvolution, binning, and estimation of uncertainties for angular power spectra
 
 ## Introduction
@@ -33,11 +33,11 @@ required:
 If you want to run the notebooks yourself, you will also need the Jupyter server.
 
 ### Examples ###
-Check out the [`ipython notebooks`](http://nbviewer.jupyter.org/github/DanielLenz/powerspectrum_master/blob/master/index.ipynb) in the repository for some examples of how to work with `powerspectrum_master`. Note that you only view them on the nbviewer service, and will have to clone the repository to run them on your machine.
+Check out the [`ipython notebooks`](http://nbviewer.jupyter.org/github/DanielLenz/powspecpy/blob/master/index.ipynb) in the repository for some examples of how to work with `powerspectrum_master`. Note that you only view them on the nbviewer service, and will have to clone the repository to run them on your machine.
 
 ### Who do I talk to? ###
 
 If you encounter any problems or have questions, do not hesitate to raise an
 issue or make a pull request. Moreover, you can contact the devs directly:
 
-* <dlenz.bonn@gmail.com>
+* <mail@daniellenz.org>
