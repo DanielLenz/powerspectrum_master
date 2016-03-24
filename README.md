@@ -19,7 +19,6 @@ the repository and add it to your `PYTHONPATH`. We will change this shortly.
 
 - Binning
 - Deconvolving
-<!-- - Caching of $M_{l_1l_2}$ matrices -->
 
 ## Dependencies ##
 
@@ -33,7 +32,7 @@ required:
 If you want to run the notebooks yourself, you will also need the Jupyter server.
 
 ### Examples ###
-Check out the [`ipython notebooks`](http://nbviewer.jupyter.org/github/DanielLenz/powspecpy/blob/master/index.ipynb) in the repository for some examples of how to work with `powerspectrum_master`. Note that you only view them on the nbviewer service, and will have to clone the repository to run them on your machine.
+Check out the [`ipython notebooks`](http://nbviewer.jupyter.org/github/DanielLenz/powspecpy/blob/master/notebooks/index.ipynb) in the repository for some examples of how to work with `powspecpy`. Note that you only view them on the nbviewer service, and will have to clone the repository to run them on your machine.
 
 ### Who do I talk to? ###
 
