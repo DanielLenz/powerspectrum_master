@@ -12,8 +12,13 @@ images. It makes use of the *Monte Carlo Apodised Spherical Transform EstimatoR*
 
 ## Installation ##
 
-Currently, `powerspectrum_master` has no `setup` feature, so you need to clone
-the repository and add it to your `PYTHONPATH`. We will change this shortly.
+The installation is done from source. Download the tar.gz-file, extract (or clone from GitHub) and simply execute
+
+```
+python setup.py install
+```
+
+We will add `powspecpy` to the `pip` index as soon as possible.
 
 ## Features ##
 
