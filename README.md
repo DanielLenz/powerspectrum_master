@@ -7,7 +7,7 @@ Deconvolution, binning, and estimation of uncertainties for angular power spectr
 - *Authors*: Daniel Lenz
 
 This package allows to extract angular power spectra for cosmological background
-images. It makes use of the *Monte Carlo Apodised Spherical Transform EstimatoR* algorithm 
+images. It makes use of the *Monte Carlo Apodised Spherical Transform EstimatoR* algorithm
 (MASTER, [Hivon et al. 2002](http://adsabs.harvard.edu/abs/2002ApJ...567....2H)).
 
 ## Installation ##
