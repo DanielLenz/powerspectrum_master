@@ -154,7 +154,7 @@ class PowSpecEstimator(object):
     @property
     def M_l1l2(self):
         if self._M_l1l2 is None:
-            self._M_l1l2 = self._determine_M_l1l2(self.lmax, self.cl_mask)
+            self._M_l1l2 = determine_M_l1l2(self.lmax, self.cl_mask)
         return self._M_l1l2
 
     @property
@@ -167,24 +167,6 @@ class PowSpecEstimator(object):
 
     # Class functions
     ##########################################
-    def _determine_M_l1l2(self, lmax, cl_mask):
-        M_l1l2 = np.zeros((lmax, lmax), dtype=np.float32)
-        # wigner_3j = np.load('resources/wigner_3j.npy', mmap_mode='r')
-        for l1, l2, l3 in it.product(np.arange(lmax), repeat=3):
-            L = l1+l2+l3
-            if L % 2:
-                continue
-            if (np.abs(l1-l2) > l3) or (l3 > (l1 + l2)):
-                continue
-
-            factor = (2. * l2 + 1.) / 4. / np.pi
-            wigner_term = (
-                (2. * l3 + 1.) * cl_mask[l3] * wigner_3j_sq(l1, l2, l3))
-
-            M_l1l2[l1, l2] += factor * wigner_term
-
-        return M_l1l2
-
     def get_cl_conv(self, map1, lmax):
         cl_conv = hp.anafast(map1, lmax=lmax)
         return cl_conv
@@ -193,3 +175,25 @@ class PowSpecEstimator(object):
         self.nbins = nbins
         self.l_lows = np.linspace(0, self.lmax-1, nbins+1, dtype=np.int)
         self.bin_centres = np.diff(self.l_lows)/2 + self.l_lows[:-1]
+
+
+# Functions
+##########################################
+@memory.cache
+def determine_M_l1l2(lmax, cl_mask):
+    M_l1l2 = np.zeros((lmax, lmax), dtype=np.float32)
+    # wigner_3j = np.load('resources/wigner_3j.npy', mmap_mode='r')
+    for l1, l2, l3 in it.product(np.arange(lmax), repeat=3):
+        L = l1+l2+l3
+        if L % 2:
+            continue
+        if (np.abs(l1-l2) > l3) or (l3 > (l1 + l2)):
+            continue
+
+        factor = (2. * l2 + 1.) / 4. / np.pi
+        wigner_term = (
+            (2. * l3 + 1.) * cl_mask[l3] * wigner_3j_sq(l1, l2, l3))
+
+        M_l1l2[l1, l2] += factor * wigner_term
+
+    return M_l1l2

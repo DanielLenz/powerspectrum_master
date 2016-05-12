@@ -3,3 +3,4 @@ from_paolo
 playground.ipynb
 .tmp
 build
+notebooks/.joblib
