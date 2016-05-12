@@ -3,7 +3,8 @@ import numba
 import itertools as it
 
 logfactorials = np.array(
-    [np.sum(np.log(np.arange(1, n+1))) for n in range(4096)])
+    [np.sum(np.log(np.concatenate(
+        (np.array([1, ]), np.arange(1, n))))) for n in range(1, 4097)])
 
 
 @numba.njit()
