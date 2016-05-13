@@ -116,6 +116,9 @@ class PowSpecEstimator(object):
     @property
     def cl_binned(self):
         self._cl_binned = np.dot(self.P_bl, self.cl_conv)
+        self._cl_binned /= (
+                        self.bin_centres * (self.bin_centres + 1.) /
+                        2 / np.pi)
         return self._cl_binned
 
     @property
@@ -123,6 +126,9 @@ class PowSpecEstimator(object):
         K_inv = linalg.inv(self.K_b1b2[1:, 1:])
         self._cl_deconv = np.dot(
             np.dot(K_inv, self.P_bl[1:, 1:]), self.cl_conv[1:])
+        self._cl_deconv /= (
+                        self.bin_centres[1:] * (self.bin_centres[1:] + 1.) /
+                        2 / np.pi)
 
         return self._cl_deconv
 
@@ -182,7 +188,7 @@ class PowSpecEstimator(object):
 @memory.cache
 def determine_M_l1l2(lmax, cl_mask):
     M_l1l2 = np.zeros((lmax, lmax), dtype=np.float32)
-    # wigner_3j = np.load('resources/wigner_3j.npy', mmap_mode='r')
+
     for l1, l2, l3 in it.product(np.arange(lmax), repeat=3):
         L = l1+l2+l3
         if L % 2:
