@@ -174,7 +174,8 @@ class PowSpecEstimator(object):
     # Class functions
     ##########################################
     def get_cl_conv(self, map1, lmax):
-        cl_conv = hp.anafast(map1, lmax=lmax)
+        map1 = np.where(np.isfinite(map1), map1, hp.UNSEEN)
+        cl_conv = hp.anafast(map1, lmax=lmax, iter=1)
         return cl_conv
 
     def set_bins(self, nbins):
