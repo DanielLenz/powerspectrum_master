@@ -16,6 +16,7 @@ class PowSpecEstimator(object):
     """docstring for PowSpec"""
 
     _cl_conv = None
+    _cl_deconv = None
     _cl_mask = None
     _nside = None
     _ls = None
@@ -64,11 +65,6 @@ class PowSpecEstimator(object):
         return self._ls
 
     @property
-    def norm(self):
-        self._norm = self.ls * (self.ls + 1.) / 2. / np.pi
-        return self._norm
-
-    @property
     def map1(self):
         return self._map1
 
@@ -97,7 +93,7 @@ class PowSpecEstimator(object):
 
     @property
     def pixfunc(self):
-        self._pixfunc = hp.pixwin(self.nside)[:self.lmax]
+        self._pixfunc = hp.pixwin(self.nside, pol=False)[:self.lmax]
         return self._pixfunc
 
     @property
@@ -105,7 +101,10 @@ class PowSpecEstimator(object):
         if hasattr(self.beam, '__iter__'):
             self._beamfunc = self.beam
         else:
-            self._beamfunc = hp.gauss_beam(np.deg2rad(self.beam), self.lmax-1)
+            self._beamfunc = hp.gauss_beam(
+                np.deg2rad(self.beam),
+                lmax=self.lmax-1,
+                pol=False)
         return self._beamfunc
 
     @property
@@ -114,62 +113,30 @@ class PowSpecEstimator(object):
         return self._windowfunc
 
     @property
-    def cl_binned(self):
-        self._cl_binned = np.dot(self.P_bl, self.cl_conv)
-        self._cl_binned /= (
-                        self.bin_centres * (self.bin_centres + 1.) /
-                        2 / np.pi)
-        return self._cl_binned
+    def cl_conv_b(self):
+        _cl_conv_b = self.bin_spectrum(self.cl_conv, binfactor=self.binfactor)
+        return _cl_conv_b
 
     @property
     def cl_deconv(self):
-        K_inv = linalg.inv(self.K_b1b2[1:, 1:])
-        self._cl_deconv = np.dot(
-            np.dot(K_inv, self.P_bl[1:, 1:]), self.cl_conv[1:])
-        self._cl_deconv /= (
-                        self.bin_centres[1:] * (self.bin_centres[1:] + 1.) /
-                        2 / np.pi)
-
+        if self._cl_deconv is None:
+            self._cl_deconv = (
+                np.linalg.lstsq(self.M_l1l2, self.cl_conv)[0] /
+                self.beamfunc**2)
         return self._cl_deconv
 
     @property
-    def P_bl(self):
-        if self._P_bl is None:
-            self._P_bl = np.zeros((self.nbins, self.lmax))
-
-            for b, l in it.product(np.arange(self.nbins), self.ls):
-                if ((2 <= self.l_lows[b]) & (self.l_lows[b] <= l) &
-                        (l < self.l_lows[b+1])):
-                    self._P_bl[b, l] += 1./2./np.pi * l * (l+1.) / (
-                        self.l_lows[b+1] - self.l_lows[b])
-
-        return self._P_bl
-
-    @property
-    def Q_lb(self):
-        if self._Q_lb is None:
-            self._Q_lb = np.zeros((self.lmax, self.nbins))
-
-            for b, l in it.product(np.arange(self.nbins), self.ls):
-                if ((2 <= self.l_lows[b]) & (self.l_lows[b] <= l) &
-                        (l < self.l_lows[b+1])):
-                    self._Q_lb[l, b] += 2.*np.pi / l / (l+1.)
-
-        return self._Q_lb
+    def cl_deconv_b(self):
+        _cl_deconv_b = self.bin_spectrum(
+            self.cl_deconv,
+            binfactor=self.binfactor)
+        return _cl_deconv_b
 
     @property
     def M_l1l2(self):
         if self._M_l1l2 is None:
             self._M_l1l2 = determine_M_l1l2(self.lmax, self.cl_mask)
         return self._M_l1l2
-
-    @property
-    def K_b1b2(self):
-        if self._K_b1b2 is None:
-            self._K_b1b2 = np.dot(
-                self.P_bl, np.dot(
-                    self.M_l1l2, ((self.windowfunc**2)[:, None] * self.Q_lb)))
-        return self._K_b1b2
 
     # Class functions
     ##########################################
@@ -178,10 +145,15 @@ class PowSpecEstimator(object):
         cl_conv = hp.anafast(map1, lmax=lmax, iter=1)
         return cl_conv
 
-    def set_bins(self, nbins):
-        self.nbins = nbins
-        self.l_lows = np.linspace(0, self.lmax-1, nbins+1, dtype=np.int)
-        self.bin_centres = np.diff(self.l_lows)/2 + self.l_lows[:-1]
+    def set_binfactor(self, binfactor):
+        self.binfactor = binfactor
+        self.bin_centres = self.bin_spectrum(
+            np.arange(self.cl_conv.shape[0]),
+            binfactor)
+
+    def bin_spectrum(self, spectrum, binfactor):
+        spectrum_binned = np.mean(spectrum.reshape((-1, binfactor)), axis=1)
+        return spectrum_binned
 
 
 # Functions

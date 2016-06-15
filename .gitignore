@@ -4,3 +4,5 @@ playground.ipynb
 .tmp
 build
 notebooks/.joblib
+powspecpy.egg-info
+powspecpy-0.2-py2.7.egg
