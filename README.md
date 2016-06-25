@@ -24,6 +24,8 @@ We will add `powspecpy` to the `pip` index as soon as possible.
 
 - Binning
 - Deconvolving
+- Accounting for the power spectrum of the instrumental noise
+- Estimate the mode-mode coupling matrix to account for partial sky coverage
 
 ## Dependencies ##
 
