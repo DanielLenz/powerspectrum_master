@@ -17,7 +17,6 @@ class PowSpecEstimator(object):
 
     _cl_conv = None
     _cl_deconv = None
-    _cl_noise = None
     _cl_mask = None
     _nside = None
     _ls = None
@@ -41,7 +40,6 @@ class PowSpecEstimator(object):
             map1,
             map2=None,
             mask=None,
-            noise=None,
             lmax=None,
             beam1=None,
             beam2=None):
@@ -49,7 +47,6 @@ class PowSpecEstimator(object):
         self._map1 = map1
         self._map2 = map2
         self._mask = mask
-        self._noise = noise
 
         if lmax is None:
             self.lmax = self.nside
@@ -82,25 +79,10 @@ class PowSpecEstimator(object):
         return self._map2
 
     @property
-    def noise(self):
-        return self._noise
-
-    @property
     def mask(self):
         if self._mask is None:
             self._mask = np.ones_like(self.map1, dtype=np.float32)
         return self._mask
-
-    @property
-    def cl_noise(self):
-        if self.noise is None:
-            raise AttributeError('No noise map was provided')
-        if self._cl_noise is None:
-            self._cl_noise = self.get_cl_conv(
-                self.noise*self.mask,
-                self.noise*self.mask,
-                lmax=self.lmax-1)
-        return self._cl_noise
 
     @property
     def cl_conv(self):
@@ -173,15 +155,9 @@ class PowSpecEstimator(object):
     @property
     def cl_deconv(self):
         if self._cl_deconv is None:
-            if self.noise is None:
-                self._cl_deconv = (
-                    np.linalg.lstsq(self.M_l1l2, self.cl_conv)[0] /
-                    self.windowfunc1*self.windowfunc2)
-            else:
-                self._cl_deconv = (
-                    np.linalg.lstsq(
-                        self.M_l1l2, self.cl_conv-self.cl_noise)[0] /
-                    self.windowfunc1 / self.windowfunc2)
+            self._cl_deconv = (
+                np.linalg.lstsq(self.M_l1l2, self.cl_conv)[0] /
+                self.windowfunc1*self.windowfunc2)
         return self._cl_deconv
 
     @property
