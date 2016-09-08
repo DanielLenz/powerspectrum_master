@@ -23,8 +23,10 @@ class PowSpecEstimator(object):
     _ls = None
 
     _pixfunc = None
-    _beamfunc = None
-    _windowfunc = None
+    _beamfunc1 = None
+    _beamfunc2 = None
+    _windowfunc1 = None
+    _windowfunc2 = None
 
     _l_lows = None
     _bincentres = None
@@ -41,7 +43,8 @@ class PowSpecEstimator(object):
             mask=None,
             noise=None,
             lmax=None,
-            beam=None):
+            beam1=None,
+            beam2=None):
 
         self._map1 = map1
         self._map2 = map2
@@ -53,7 +56,8 @@ class PowSpecEstimator(object):
         else:
             self.lmax = lmax
 
-        self.beam = beam
+        self.beam1 = beam1
+        self.beam2 = beam2
 
     # Class properties
     ##########################################
@@ -73,6 +77,8 @@ class PowSpecEstimator(object):
 
     @property
     def map2(self):
+        if self._map2 is None:
+            self._map2 = self.map1
         return self._map2
 
     @property
@@ -91,42 +97,73 @@ class PowSpecEstimator(object):
             raise AttributeError('No noise map was provided')
         if self._cl_noise is None:
             self._cl_noise = self.get_cl_conv(
-                self.noise*self.mask, lmax=self.lmax-1)
+                self.noise*self.mask,
+                self.noise*self.mask,
+                lmax=self.lmax-1)
         return self._cl_noise
 
     @property
     def cl_conv(self):
         if self._cl_conv is None:
             self._cl_conv = self.get_cl_conv(
-                self.map1*self.mask, lmax=self.lmax-1)
+                self.map1*self.mask,
+                self.map2*self.mask,
+                lmax=self.lmax-1)
         return self._cl_conv
 
     @property
     def cl_mask(self):
         if self._cl_mask is None:
-            self._cl_mask = self.get_cl_conv(self.mask, lmax=self.lmax-1)
+            self._cl_mask = self.get_cl_conv(
+                self.mask,
+                self.mask,
+                lmax=self.lmax-1)
         return self._cl_mask
 
     @property
     def pixfunc(self):
-        self._pixfunc = hp.pixwin(self.nside, pol=False)[:self.lmax]
+        if self._pixfunc is None:
+            self._pixfunc = hp.pixwin(self.nside, pol=False)[:self.lmax]
         return self._pixfunc
 
     @property
-    def beamfunc(self):
-        if hasattr(self.beam, '__iter__'):
-            self._beamfunc = self.beam
+    def beamfunc1(self):
+        if hasattr(self.beam1, '__iter__'):
+            self._beamfunc1 = self.beam1
         else:
-            self._beamfunc = hp.gauss_beam(
-                np.deg2rad(self.beam),
+            self._beamfunc1 = hp.gauss_beam(
+                np.deg2rad(self.beam1),
                 lmax=self.lmax-1,
                 pol=False)
-        return self._beamfunc
+        return self._beamfunc1
 
     @property
-    def windowfunc(self):
-        self._windowfunc = self.beamfunc * self.pixfunc
-        return self._windowfunc
+    def beamfunc2(self):
+        # if self.beam2 is None and self._map2 is None:
+        #     self._beamfunc2 = self.beamfunc1
+        #     return self._beamfunc2
+        if self.beam2 is None:
+            self._beamfunc2 = np.ones(self.lmax, dtype=np.float32)
+
+        elif hasattr(self.beam2, '__iter__'):
+            self._beamfunc2 = self.beam2
+        else:
+            self._beamfunc2 = hp.gauss_beam(
+                np.deg2rad(self.beam2),
+                lmax=self.lmax-1,
+                pol=False)
+        return self._beamfunc2
+
+    @property
+    def windowfunc1(self):
+        self._windowfunc1 = self.beamfunc1 * self.pixfunc
+        return self._windowfunc1
+
+    @property
+    def windowfunc2(self):
+        self._windowfunc2 = self.beamfunc2 * self.pixfunc
+        return self._windowfunc2
+
 
     @property
     def cl_conv_b(self):
@@ -139,12 +176,12 @@ class PowSpecEstimator(object):
             if self.noise is None:
                 self._cl_deconv = (
                     np.linalg.lstsq(self.M_l1l2, self.cl_conv)[0] /
-                    self.beamfunc**2)
+                    self.windowfunc1*self.windowfunc2)
             else:
                 self._cl_deconv = (
                     np.linalg.lstsq(
                         self.M_l1l2, self.cl_conv-self.cl_noise)[0] /
-                    self.beamfunc**2)
+                    self.windowfunc1 / self.windowfunc2)
         return self._cl_deconv
 
     @property
@@ -162,9 +199,11 @@ class PowSpecEstimator(object):
 
     # Class functions
     ##########################################
-    def get_cl_conv(self, map1, lmax):
-        map1 = np.where(np.isfinite(map1), map1, hp.UNSEEN)
-        cl_conv = hp.anafast(map1, lmax=lmax, iter=3)
+    def get_cl_conv(self, map1, map2, lmax):
+        isfinite = np.isfinite(map1) & np.isfinite(map2)
+        map1 = np.where(isfinite, map1, hp.UNSEEN)
+        map2 = np.where(isfinite, map2, hp.UNSEEN)
+        cl_conv = hp.anafast(map1, map2, lmax=lmax, iter=3)
         return cl_conv
 
     def set_binfactor(self, binfactor):
